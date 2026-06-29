@@ -1,0 +1,28 @@
+# ---------------------------------------------------------------------------
+# DACCAS runtime dependencies
+# ---------------------------------------------------------------------------
+# Core deep-learning stack (text TDA model, Moving Window ResNet-34,
+# ConvNeXt-L feature extractor for Image Rotation Default)
+torch>=2.2
+torchvision>=0.17
+
+# YOLOv8 classifier (dispatcher) + Open Circle detector
+ultralytics>=8.1
+
+# Image Rotation (Default): ConvNeXt-L features -> logistic regression.
+# The .joblib was trained with scikit-learn 1.7.2. Any modern 1.x loads it,
+# but you may see an InconsistentVersionWarning on other versions; pin to
+# 1.7.2 for exact, warning-free reproduction.
+scikit-learn>=1.7,<1.9   # use scikit-learn==1.7.2 to match the trained model exactly
+joblib>=1.3
+
+# Image Rotation (Special): Sobel seam score
+scipy>=1.10
+
+# Imaging / arrays (used throughout and by the vendored text-model code)
+numpy>=1.24
+pillow>=9.5
+opencv-python>=4.7        # imported by the vendored dataset.py (CharsetMapper module)
+
+# Only needed by build_moving_window_charset.py (optional helper)
+pandas>=2.0

@@ -1,0 +1,12 @@
+Put the following weight files in this folder (exact names):
+
+  CLASSIFICATION_MODEL.pt
+  OPEN_CIRCLE_BEST_MODEL.pt
+  IMAGE_ROTATION_DEFAULT_MODEL.joblib
+  MOVING_WINDOW_MODEL.pth
+  GREGWAR_BEST_MODEL.pth
+  MOBICMS_BEST_MODEL.pth
+  KING_FINETUNE_BEST_MODEL.pth
+  GENERAL_BEST_MODEL.pth
+
+IMAGE_ROTATION_DEFAULT_META.json is already included here.

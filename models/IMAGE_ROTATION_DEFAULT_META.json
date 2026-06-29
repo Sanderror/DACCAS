@@ -1,0 +1,30 @@
+{
+  "crop_mode": "circular",
+  "classes": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "class_angles": [
+    0,
+    90,
+    180,
+    270
+  ],
+  "upright_class_index": 0,
+  "best_C": 10.0,
+  "val_acc": 0.8860247662370483,
+  "test_acc": 0.8827394490775841,
+  "test_per_class_acc": {
+    "0": 0.959059893858984,
+    "90": 0.81526408895628,
+    "180": 0.9423805913570887,
+    "270": 0.8142532221379833
+  },
+  "standardize": true,
+  "train_geometry": "training",
+  "val_test_geometry": "inference",
+  "input_size": 224,
+  "feature_dim": 1536
+}
