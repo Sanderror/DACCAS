@@ -54,7 +54,7 @@ data/
 │   ├── default/
 │   │   ├── Pitch/
 │   │   └── Dread/
-│   └── special/    # Find in folder image rotation / special
+│   └── special/    # MAKE SURE TO ADD THE RAW IMAGES HERE, FOLDER image rotation / special / raw_data !!!!!!
 ├── open_circle/    # Find in folder open circle
 │   ├── images/
 │   │   ├── train/
