@@ -1,74 +1,81 @@
 # DACCAS
 
-**D**ark-web **A**daptive **C**APTCHA **C**lassification **A**nd **S**olving.
+**D**ark web **A**daptive **C**APTCHA **C**lassification **A**nd **S**olving.
 
-A two-step pipeline: a YOLOv8 **classifier** acts as a **dispatcher** that routes
-an input CAPTCHA image to the matching module in a **solver library**. Each
-solver is an independently loadable module behind a common interface, so the
-library is additive — a new CAPTCHA type is supported by registering one new
-solver, with no change to the dispatcher or the existing solvers and no
-retraining of anything else.
+DACCAS is a system created for automated CAPTCHA classification and solving on the dark web. It is capable of classifying and solving multiple dark web CAPTCHAs. The system embeds the framework below, which is modular in design, allowing any contributor to add new solutions to the system:
+
+![Framework of DACCAS](https://github.com/[username]/[reponame]/blob/[branch]/image.jpg?raw=true)
+
+A two-step pipeline: a YOLOv8 **classifier** acts as a **dispatcher** that routes an input CAPTCHA image to the matching module in the **solver library**. All solvers are integrated as modules. This allows for easy integration of new solutions. Currently the following dark web CAPTCHAs are supported:
+
+* Text CAPTCHA
+* Moving Window CAPTCHA
+* Open Circle CAPTCHA
+* Image Rotation CAPTCHA (two different variants: default and special)
 
 ```python
 from daccas import DACCAS
 
-# Build once at startup. preload=True loads every model now (see §7) so the
-# first real Solve() is instant instead of paying first-use loading cost.
+# Build once at startup. preload=True loads every model now so it's not done during inference
+# which means the solutions are instanteneous.
+# device can also be switched to cuda, if you have a gpu
 daccas = DACCAS(models_dir="models", charsets_dir="charsets", device="cpu",
                 preload=True)
 
-cls = daccas.Classify("captcha.png")          # -> {'class': 'Open Circle', 'confidence': 0.97, ...}
-out = daccas.Solve("captcha.png", cls["class"])   # -> structured solver result
-# or do both at once:
-out = daccas.run("captcha.png")               # -> {'classification': ..., 'result': ...}
+# For only classification
+cls = daccas.Classify("captcha.png")
+# For only solving
+out = daccas.Solve("captcha.png", cls["class"])
+# For doing both in one step:
+out = daccas.run("captcha.png")
 ```
 
 ---
 
 ## 1. Directory layout
 
-Place the files exactly like this. The weight/charset **filenames matter** — the
-defaults below are what `DACCAS` looks for.
+The directory looks as follows. All these files are already included by default, except for the models in the models/ directory. Such files can be obtained from https://drive.google.com/drive/folders/1zNzwtzaaarIKGj-JxQ_1HRhsxAcmazfL?usp=drive_link. You should then place them manually in the models/ directory.
 
 ```
 DACCAS/
-├── daccas/                          # the package (provided)
-│   ├── __init__.py
+├── daccas/                      # the package (provided)
+│   ├── __init__.py                  # Initializes the full package
 │   ├── daccas.py                    # DACCAS: Classify() + Solve()
-│   ├── classifier.py                # DACCASClassifier (the dispatcher)
-│   ├── orientation_lr.py            # ConvNeXt-L extractor + geometry (rotation-default)
-│   ├── solvers/
-│   │   ├── base.py                  # BaseSolver interface
-│   │   ├── open_circle.py
-│   │   ├── image_rotation_special.py
-│   │   ├── image_rotation_default.py
-│   │   ├── moving_window.py
-│   │   └── text_solver.py
-│   └── textmodel/                   # vendored TDA text-model code
-│       ├── model.py                 # CaptchaTDAModel
-│       ├── resnet_tda.py
-│       ├── tda.py
-│       └── dataset.py               # CharsetMapper
+│   ├── capture.py                   # Captures an image of the HTML element (supports Playwright and Selenium)
+│   ├── classifier.py                # DACCAS Classifier (the dispatcher)
+│   ├── orientation_lr.py            # ConvNeXt-L extractor for image rotation default + preprocess the image
+│   ├── solvers/                     # All Solvers
+│   │   ├── base.py                     # BaseSolver (template class for integrating new solvers)
+│   │   ├── open_circle.py              # Open circle solver
+│   │   ├── image_rotation_default.py   # Image rotation default solver (uses orientation_lr.py)
+│   │   ├── image_rotation_special.py   # Image rotation special solver (preprocess stitch image parts, then Sobel filter)
+│   │   ├── moving_window.py            # Moving window solver
+│   │   └── text_solver.py              # Text solver (uses textmodel/ directory .py files)
+│   └── textmodel/                   # Transformer text model code
+│       ├── model.py                   # CaptchaTDAModel
+│       ├── resnet_tda.py              # Supporting underlying ResNet backbone
+│       ├── tda.py                     # TDA module
+│       └── dataset.py                 # CharsetMapper
 │
-├── models/                          # <-- YOU put the weights here
-│   ├── CLASSIFICATION_MODEL.pt              # YOLOv8-cls dispatcher
-│   ├── OPEN_CIRCLE_BEST_MODEL.pt            # YOLOv8 detector
-│   ├── IMAGE_ROTATION_DEFAULT_MODEL.joblib  # sklearn LR pipeline
-│   ├── IMAGE_ROTATION_DEFAULT_META.json     # crop_mode, best_C, classes, ...
-│   ├── MOVING_WINDOW_MODEL.pth              # ResNet-34, 32 classes
-│   ├── GREGWAR_BEST_MODEL.pth              # TDA, charset_36
-│   ├── MOBICMS_BEST_MODEL.pth              # TDA, charset_36
-│   ├── KING_FINETUNE_BEST_MODEL.pth        # TDA, charset_36
-│   └── GENERAL_BEST_MODEL.pth              # TDA, charset_62
+├── models/                          # You put the model weights here
+│   ├── CLASSIFICATION_MODEL.pt              # YOLOv8 (classification only)
+│   ├── OPEN_CIRCLE_BEST_MODEL.pt            # YOLOv8
+│   ├── IMAGE_ROTATION_DEFAULT_MODEL.joblib  # ConvNexT-Large + OvR-Logistic Regression
+│   ├── IMAGE_ROTATION_DEFAULT_META.json     # Defines the posisble preprocessing and hyperparameters for the best model of above
+│   ├── MOVING_WINDOW_MODEL.pth              # ResNet-34
+│   ├── GREGWAR_BEST_MODEL.pth              # Transformer
+│   ├── MOBICMS_BEST_MODEL.pth              # Transformer
+│   ├── KING_FINETUNE_BEST_MODEL.pth        # Transformer
+│   └── GENERAL_BEST_MODEL.pth              # Transformer
 │
-├── charsets/
-│   ├── charset_36.txt                       # a-z 0-9  (text: Gregwar/Mobicms/King)
-│   ├── charset_62.txt                       # a-z A-Z 0-9  (text: Other/General)
-│   └── moving_window_charset.txt            # <-- generate this (see §4)
+├── charsets/                            # The character set mappings for text and moving window captchas
+│   ├── charset_36.txt                       # a-z 0-9  (text: Gregwar/Mobicms/King models)
+│   ├── charset_62.txt                       # a-z A-Z 0-9  (text: General model)
+│   └── moving_window_charset.txt            # a-z 0-9 exluding b and 8, and o and 0
 │
-├── build_moving_window_charset.py   # helper to make moving_window_charset.txt
-├── example.py
-└── requirements.txt
+├── EXAMPLE_USAGE.ipynb                  # Contains examples of the classification and solving models being applied on challenges
+├── example.py                           # Contains a full inference example on a dark web site
+└── requirements.txt                     # Contains the packages that need to be installed
 ```
 
 The package finds weights by name under `models_dir` and charsets under
@@ -79,33 +86,16 @@ directly (they all take explicit `*_path` arguments).
 
 ## 2. Install
 
-**Windows (PowerShell):**
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-If `Activate.ps1` is blocked ("running scripts is disabled"), either run
-`Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` once and
-retry, or use `.venv\Scripts\activate.bat` instead. You should see `(.venv)` in
-your prompt once active. PowerShell note: it does not use `&&` to chain commands
-or `\` to continue lines — run each line separately, or use a backtick `` ` ``
-for line continuation.
-
-**Windows (PyCharm, no terminal needed):**
-File → Settings → Project → Python Interpreter → Add Interpreter →
-Add Local Interpreter → Virtualenv (New). PyCharm then offers to install the
-packages from `requirements.txt` via the editor banner.
-
-**macOS / Linux:**
+First, create a virtual environment for your project, e.g. with the following:
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
 ```
 
-`torch` is a large download (1 GB+), so the install step will sit for a while —
-it is not frozen. GPU is optional: pass `device="cuda"` to `DACCAS(...)` if
-available; everything defaults to CPU.
+Then, install the required packages with:
+
+```bash
+pip install -r requirements.txt
+```
 
 ---
 
@@ -114,182 +104,115 @@ available; everything defaults to CPU.
 ### `DACCAS.Classify(image)`
 Runs `CLASSIFICATION_MODEL.pt` (YOLOv8-cls, `imgsz=224`). Returns
 `{'class', 'confidence', 'raw_name'}`. The model emits filesystem-safe names
-(e.g. `text_gregwar`); these are mapped to canonical labels (e.g.
-`Text (Gregwar)`).
+(e.g. `text_gregwar`), which are mapped to the explanatory labels (e.g. `Text (Gregwar)`).
 
-The nine classes:
+The nine classes included are:
 `Text (Gregwar)`, `Text (Mobicms)`, `Text (King)`, `Text (Other)`,
 `Moving Window`, `Open Circle`, `Image Rotation (Default)`,
 `Image Rotation (Special)`, `No Solver`.
 
+These are thus all linked to one of the solvers in the solvers/ directory.
+
 ### `DACCAS.Solve(image, captcha_class)`
-Routes the image to the solver for that class:
+This routes the image to the solver belonging to the class, and applies the solving model on the captcha.
+
+It provides a machine-readable output that can be integrated into web automation tools to solve the CAPTCHAs. The following outputs are given:
 
 | Class | Solver | Returns |
 |---|---|---|
-| **No Solver** | — | `{solved: False, message: ...}` (deliberate decline) |
-| **Open Circle** | YOLOv8 detect (`imgsz=480`, `conf=0.25`) | `x, y` = centre of the most-confident box (`all_boxes` also returned) |
-| **Image Rotation (Special)** | seam stitch (close black gap) → Sobel seam score (`SEAM_R=40`, `delta=5`) | `sobel_score` (`objective: "minimize"`) — no weights needed |
-| **Image Rotation (Default)** | ConvNeXt-L feature → LR (`crop_mode=circular`, `C=10`) | `p_upright` (`objective: "maximize"`) |
-| **Moving Window** | ResNet-34 (contrast 1.25 → 224² → ImageNet norm) | `character`, `class_index`, `confidence` |
-| **Text (Gregwar/Mobicms/King)** | TDA transformer + `charset_36` | `text` |
-| **Text (Other)** | TDA transformer + `charset_62` | `text` |
+| **No Solver** | — | `{solved: False, message: ...}`  |
+| **Open Circle** | YOLOv8 (`imgsz=480`, `conf=0.25`) | `x, y` = centre of the most-confident box (`all_boxes` also returned) |
+| **Image Rotation (Special)** | seam stitch (close black gap) -> Sobel seam score (`SEAM_R=40`, `delta=5`) | `sobel_score` (`objective: "minimize"`) |
+| **Image Rotation (Default)** | ConvNeXt-L feature -> Logistic Regression (`crop_mode=circular`, `C=10`) | `p_upright` (`objective: "maximize"`) |
+| **Moving Window** | ResNet-34 (contrast 1.25, image size 224x224) | `character`, `class_index`, `confidence` |
+| **Text (Gregwar/Mobicms/King)** | TDA Transformer + `charset_36` | `text` |
+| **Text (Other)** | TDA Transformer + `charset_62` | `text` |
 
 The two rotation solvers return a per-image score plus an `objective` field
-(`minimize` for Sobel, `maximize` for P(upright)). This is intentional: the
-planned multi-variant protocol runs `Solve` once per rotated variant and then
-picks the lowest Sobel score / highest P(upright). The current single-image
-implementation already exposes exactly what that comparison needs.
+(`minimize` for Sobel, `maximize` for P(upright)). This is because the model has to be run on all rotated variants of a challenge image.
+How to run such a model on all your variants can be found in `EXAMPLE_USAGE.ipynb`.
 
 ---
 
-## 4. Moving Window charset (required for character output)
+## 4. Loading the models at the start
 
-The ResNet-34 outputs 32 class indices. In training the mapping was
-`sorted(df["label"].unique())`, so index *i* = the *i*-th sorted unique label.
-That ordering lives in the label CSVs, **not** in the weights, so you must
-regenerate it once.
-
-**Windows (PowerShell)** — one line; quote any path containing spaces:
-```powershell
-python build_moving_window_charset.py --csv "data/darkmarketreloaded_labels.csv" "data/addyrus_labels.csv" --label_col label --out charsets/moving_window_charset.txt
-```
-(PowerShell continues lines with a backtick `` ` ``, not `\`. Keeping it on one
-line avoids that entirely.)
-
-**macOS / Linux:**
-```bash
-python build_moving_window_charset.py \
-    --csv data/darkmarketreloaded_labels.csv data/addyrus_labels.csv \
-    --label_col label \
-    --out charsets/moving_window_charset.txt
-```
-
-This writes one character per line in class-index order. If the file is absent,
-the solver still runs but returns the **class index** as the character and sets
-`charset_provided: False`.
-
----
-
-## 5. Image Rotation (Default) — ConvNeXt-L weights
-
-This solver extracts features with a frozen **ConvNeXt-L (ImageNet)** backbone.
-By default torchvision downloads those weights from `download.pytorch.org`. If
-your environment is offline, download `convnext_large` weights once and pass:
+During application in a real-world scenario, it is adviced to load daccas at the start with the argument `preload=True`.
+This is because otherwise when a solver is first called, the weights still have to be loaded. This will take crucial time of the inference speed.
+When it is loaded upfront before a crawl, this won't be an isssue.
+This can be done in one of two ways:
 
 ```python
-DACCAS(..., convnext_weights_path="models/convnext_large.pth")
+daccas = DACCAS(..., preload=True) 
 ```
-
-The `.joblib` itself (StandardScaler + one-vs-rest LogisticRegression, `C=10`)
-was trained with scikit-learn 1.7.2. It loads under newer 1.x with a harmless
-`InconsistentVersionWarning`, which the solver now silences; pin
-`scikit-learn==1.7.2` for exact, warning-free reproduction.
-
----
-
-## 6. Image Rotation (Special) — seam preprocessing
-
-The raw 100×100 captcha has a black gap ring between the inner disc (radius 40)
-and the outer ring. Before scoring, the solver closes that gap (`stitch_seam`):
-the outer ring is shrunk by `scale=0.93` so its inner edge moves in, and the
-*circular* part of the inner disc (black corners excluded) is stitched back onto
-the centre. The Sobel seam band then sits exactly at radius 40. Preprocessing is
-on by default; disable with `ImageRotationSpecialSolver(preprocess=False)` or
-tune `inner_r` / `scale`. The result dict reports `preprocessed: true`.
-
----
-
-## 7. Eager loading for low latency
-
-Solvers lazy-load their weights on first use, so a cold first `Solve()` pays the
-load cost (and, for Image Rotation Default, the one-time ConvNeXt-L download).
-For a real-world / server setting where each prediction must be fast, load
-everything up front — either at construction or explicitly:
-
+or:
 ```python
-daccas = DACCAS(..., preload=True)   # loads classifier + all solvers now
-# or:
 daccas = DACCAS(...)
-daccas.warmup(verbose=True)          # same thing, on demand
+daccas.warmup(verbose=True)         
 ```
 
-After warmup, every `Solve()` only pays forward-pass compute — no weight
-reloading. Notes:
-
-* Startup loads four ~400 MB text models plus the rest, so warmup takes a while;
-  it is a **one-time boot cost**. Construct DACCAS once and reuse it for all
-  requests (don't rebuild per image).
-* The ConvNeXt-L ImageNet weights download once and are cached by torch
-  (`~/.cache/torch/hub/checkpoints` or `%USERPROFILE%\.cache\torch\...`), so only
-  the very first run on a machine downloads them. Pass `convnext_weights_path`
-  to avoid the network entirely.
-* Use `device="cuda"` for materially faster forward passes on the neural solvers.
+By default `device=cpu` is used, thus running the models on cpu. If you have access to a gpu, it is advice to use `device=cuda`. This will improve model inference speed, and the loading of the initial models.
 
 ---
 
-## 8. Capturing CAPTCHAs (getting an image in)
+## 5. Capturing images of CAPTCHAs
 
-DACCAS does not drive a browser, on purpose. Capturing a live element always
-needs an automation tool, and which one is your choice. The thing they all share
-is that they can return a screenshot as PNG **bytes**, and DACCAS accepts bytes
-directly — so any tool integrates the same way:
-
-```
-screenshot bytes (or PIL image / path / ndarray)  ->  Classify / Solve
-```
-
-`daccas.Classify(...)` and `daccas.Solve(...)` accept a file path, a PIL image,
-raw bytes, or a numpy array interchangeably.
-
-Optional convenience adapters live in `daccas.capture` (they don't import
-Playwright/Selenium at import time, so neither is a required dependency):
+As discussed in the paper, DACCAS does not perform CAPTCHA detection. What it does support is capturing images of challenges. It supports this using the two main providers for web automation tools (in Python): Selenium and Playwright. The user has to obtain a UNIQUE ID (!) to the HTML ELEMENT containing the CAPTCHA. Then, DACCAS handles the rest, as is demonstrated in the examples below:
 
 **Playwright (sync):**
+
+For playwright, we have constructed the `capture.from_playwright` function.
 ```python
 from playwright.sync_api import sync_playwright
 from daccas import DACCAS, capture
 
-d = DACCAS(preload=True)
+daccas = DACCAS(models_dir="models", charsets_dir="charsets", device="cpu",
+                preload=True)
 with sync_playwright() as p:
     page = p.chromium.launch().new_page()      # device_scale_factor=1 if HiDPI (see below)
     page.goto(url)
-    img = capture.from_playwright(page.locator("#captcha-img"))
-    print(d.run(img))
 
-# equivalently, with no helper at all — just pass the bytes:
+    # THIS IS WHERE DACCAS CAPTURER IS USED
+    # NOTE THAT THE ELEMENT TO THE CAPTCHA IMAGE HAS TO BE PROVIDED BY YOU! IT MUST BE A UNIQUE ELEMENT!
+    img = capture.from_playwright(page.locator("#captcha-img"))
+
+    # THEN YOU CAN RUN THE INFERENCE (CLASSIFICATION + SOLVING) ON THE CAPTURED IMAGE
+    daccas.run(img)
+
+# This can also be done without the DACCAS capturer system, if you want to
 # png = page.locator("#captcha-img").screenshot()
-# d.run(png)
+# daccas.run(png)
 ```
 
-**Playwright (async):** `img = await capture.from_playwright_async(page.locator("#captcha-img"))`
+**Playwright (async):**
+
+For async it is the same as above, but then use `img = await capture.from_playwright_async(page.locator("#captcha-img"))` at line 11.
 
 **Selenium:**
+
+For selenium it works similar but then use the `capture.from_selenium` function instead
 ```python
 from selenium.webdriver.common.by import By
 from daccas import capture
+daccas = DACCAS(models_dir="models", charsets_dir="charsets", device="cpu",
+                preload=True)
 img = capture.from_selenium(driver.find_element(By.ID, "captcha-img"))
 # or: capture.from_selenium_driver(driver, By.ID, "captcha-img")
-# raw-bytes equivalent: driver.find_element(...).screenshot_as_png
+daccas.run(img)
 ```
 
-**Pixel-geometry caveat.** The Image Rotation (Special) solver assumes a 100×100
-captcha with inner-disc radius 40. A screenshot can come back larger — especially
-on a HiDPI/Retina display, where the device pixel ratio doubles the pixels. Fix
-it by capturing at 1:1 (Playwright: `browser.new_context(device_scale_factor=1)`;
-browser at 100% zoom) or by normalising on capture:
-`capture.from_playwright(loc, target_size=(100, 100))`. The neural solvers resize
-internally and are unaffected.
+Note that it is not obligatory to use the DACCAS Capturer functions. The examples show that one can also just obtain the image in bytes or as an actual image using Playwright and Selenium themselves, and then pass the image to DACCAS run() or classify() function.
 
 ---
 
-## 9. Extending the library (the design point)
+## 6. Extending the library (Community Contributed Solvers)
 
-Add a CAPTCHA type in three steps, touching nothing else:
+As mentioned, anyone can contribute new solutions to DACCAS.
 
-1. Subclass `BaseSolver` (implement `_load` and `solve`); set `HANDLES`.
-2. Add the class name to the classifier's `SAFE_TO_CLASS` map and retrain only
+To do so, you should follow the following three steps without touching anything else:
+
+1. Create a Subclass of `BaseSolver` in the solvers directory (implement `_load` and `solve`) and set `HANDLES`.
+2. Add the class name to the `classifier.py` classifier's `SAFE_TO_CLASS` map and retrain only
    the lightweight YOLOv8-cls dispatcher to recognise the new type.
-3. Register the solver in `DACCAS.registry`.
+3. Register the solver in `DACCAS.registry` by adding the model weights to the DEFAULT_FILES, and adding it to `self.registry: dict[str, object] = {` in line 91.
 
-Existing solvers and their weights are untouched.
+Existing solvers and their weights should not be touched.
