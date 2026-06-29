@@ -23,6 +23,3 @@ scipy>=1.10
 numpy>=1.24
 pillow>=9.5
 opencv-python>=4.7        # imported by the vendored dataset.py (CharsetMapper module)
-
-# Only needed by build_moving_window_charset.py (optional helper)
-pandas>=2.0
