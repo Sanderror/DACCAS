@@ -4,3 +4,8 @@ __pycache__/
 models/*.pt
 models/*.pth
 models/*.joblib
+.ipynb_checkpoints/
+.idea/
+classifier_output/
+data/**
+!data/README_RETRAIN_CLASSIFIER.md
