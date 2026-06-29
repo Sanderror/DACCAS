@@ -62,16 +62,18 @@ data/
 │   │   └── test/
 │   ├── labels/   # This is not used for classification, but standard included in the export
 │   └── dataset.yaml   # This is not used for classification, but standard included in the export
-└── classifier/    # Find in folder classifier
-    ├── odd_one_out_v1/
-    ├── scrambled_image_v1/
-    ├── scrambled_image_v2/
-    ├── security_question_v1/
-    ├── security_question_v2/
-    ├── math/
-    ├── minority_group/
-    └── recaptchav2/  # These are obtained from https://www.kaggle.com/datasets/mikhailma/test-dataset
-        ├── Bicycle/
-        ├── Bridge/
-        ...    # Multiple other categories are exported by default
+|── classifier/    # Find in folder classifier
+|   ├── odd_one_out_v1/
+|   ├── scrambled_image_v1/
+|   ├── scrambled_image_v2/
+|   ├── security_question_v1/
+|   ├── security_question_v2/
+|   ├── math/
+|   ├── minority_group/
+|   └── recaptchav2/  # These are obtained from https://www.kaggle.com/datasets/mikhailma/test-dataset
+|       ├── Bicycle/
+|       ├── Bridge/
+|       ...    # Multiple other categories are exported by default
+|
+└── SYSTEM_TEST   # THIS ONE IS NOT NEEDED FOR RETRAINING! IT IS USED IN EXAMPLE_USAGE.ipynb
 ```
