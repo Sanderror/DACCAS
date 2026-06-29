@@ -72,6 +72,16 @@ DACCAS/
 │   ├── charset_36.txt                       # a-z 0-9  (text: Gregwar/Mobicms/King models)
 │   ├── charset_62.txt                       # a-z A-Z 0-9  (text: General model)
 │   └── moving_window_charset.txt            # a-z 0-9 exluding b and 8, and o and 0
+|
+├── data/
+│   ├── README_RETRAIN_CLASSIFIER    # THIS FILE CONTAINS THE EXACT (EXPECTED) FILE STRUCTURE FOR THIS DATA FOLDER, BELOW IS JUST A SUMMARY
+│   ├── text                         # All text captcha data
+│   ├── moving_window                # All moving window captcha data
+│   ├── image_rotation               # All image rotation captcha data
+│       ├── default                   
+│       └── special 
+│   ├── open_circle                  # All open circle captcha data
+│   └── classifier                   # All other captchas used for the No Solver class
 │
 ├── EXAMPLE_USAGE.ipynb                  # Contains examples of the classification and solving models being applied on challenges
 ├── example.py                           # Contains a full inference example on a dark web site
@@ -210,9 +220,18 @@ As mentioned, anyone can contribute new solutions to DACCAS.
 
 To do so, you should follow the following three steps without touching anything else:
 
-1. Create a Subclass of `BaseSolver` in the solvers directory (implement `_load` and `solve`) and set `HANDLES`.
-2. Add the class name to the `classifier.py` classifier's `SAFE_TO_CLASS` map and retrain only
-   the lightweight YOLOv8-cls dispatcher to recognise the new type.
-3. Register the solver in `DACCAS.registry` by adding the model weights to the DEFAULT_FILES, and adding it to `self.registry: dict[str, object] = {` in line 91.
+1. Create a Subclass of `BaseSolver` in a new .py file in the solvers directory(e.g. `sliding_pattern.py` containing class `SlidingPatternSolver(BaseSolver)`
+- You can use the template structure of `BaseSolver`
+- It must do at least two things: _load() the model from the models directory, and return a result dictionary from solve()
+- You can add supporting functions and classes yourself for the model
+2. Then, make sure to add your solver, e.g. `SlidingPatternSolver` to the `daccas/solvers/__init.py` file
+3. Then, register the solver in the `daccas/daccas.py` file
+- First add the model path to DEFAULT_FILES
+- Then add the model to the `self.registry: dict[str, object] = {` in line 91.
+4. Finally, retrain the Classifier so it can identify your new captcha
+- First add your captcha images to the data/ directory (follow the README_RETRAIN_CLASSIFIER.md file structure for this)
+- Then, run the CLASSIFIER_RETRAIN.ipynb notebook. (Note that you need to add your new class in cell 1, and that you might need to change the no solver class)
+- After running, a new CLASSIFICATION_MODEL.pt is obtained, which should be manually replaced to the existing .pt file
+- Finally, and add the class name and safe_class_name to the SAFE_TO_CLASS mapping in `classifier.py`. (IMPORTANT: USE THE EXACT SAME CLASS NAMES AS USED WHEN RETRAINING THE MODEL WITH THE NOTEBOOK)
 
 Existing solvers and their weights should not be touched.
