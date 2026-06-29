@@ -4,7 +4,7 @@
 
 DACCAS is a system created for automated CAPTCHA classification and solving on the dark web. It is capable of classifying and solving multiple dark web CAPTCHAs. The system embeds the framework below, which is modular in design, allowing any contributor to add new solutions to the system:
 
-![Framework of DACCAS](https://github.com/[username]/[reponame]/blob/[branch]/image.jpg?raw=true)
+![Framework of DACCAS](https://github.com/Sanderror/DACCAS/blob/main/DACCAS_Framework_Updated%20(2).png)
 
 A two-step pipeline: a YOLOv8 **classifier** acts as a **dispatcher** that routes an input CAPTCHA image to the matching module in the **solver library**. All solvers are integrated as modules. This allows for easy integration of new solutions. Currently the following dark web CAPTCHAs are supported:
 
