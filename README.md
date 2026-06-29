@@ -45,6 +45,7 @@ DACCAS/
 │   ├── classifier.py                # DACCAS Classifier (the dispatcher)
 │   ├── orientation_lr.py            # ConvNeXt-L extractor for image rotation default + preprocess the image
 │   ├── solvers/                     # All Solvers
+│   │   ├── __init__.py                 # Initializes the full solving system
 │   │   ├── base.py                     # BaseSolver (template class for integrating new solvers)
 │   │   ├── open_circle.py              # Open circle solver
 │   │   ├── image_rotation_default.py   # Image rotation default solver (uses orientation_lr.py)
@@ -52,6 +53,7 @@ DACCAS/
 │   │   ├── moving_window.py            # Moving window solver
 │   │   └── text_solver.py              # Text solver (uses textmodel/ directory .py files)
 │   └── textmodel/                   # Transformer text model code
+│       ├── __init__.py                # Initializes the text model components
 │       ├── model.py                   # CaptchaTDAModel
 │       ├── resnet_tda.py              # Supporting underlying ResNet backbone
 │       ├── tda.py                     # TDA module
@@ -71,7 +73,7 @@ DACCAS/
 ├── charsets/                            # The character set mappings for text and moving window captchas
 │   ├── charset_36.txt                       # a-z 0-9  (text: Gregwar/Mobicms/King models)
 │   ├── charset_62.txt                       # a-z A-Z 0-9  (text: General model)
-│   └── moving_window_charset.txt            # a-z 0-9 exluding b and 8, and o and 0
+│   └── moving_window_charset.txt            # A-Z 0-9 exluding b and 8, and o and 0
 |
 ├── data/
 │   ├── README_RETRAIN_CLASSIFIER    # THIS FILE CONTAINS THE EXACT (EXPECTED) FILE STRUCTURE FOR THIS DATA FOLDER, BELOW IS JUST A SUMMARY
