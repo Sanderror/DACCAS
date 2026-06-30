@@ -87,7 +87,6 @@ DACCAS/
 │
 ├── CLASSIFIER_RETRAIN.ipynb             # Notebook to retrain the Classifier after a new solution has been added to the library
 ├── EXAMPLE_USAGE.ipynb                  # Contains examples of the classification and solving models being applied on challenges
-├── example.py                           # Contains a full inference example on a dark web site
 └── requirements.txt                     # Contains the packages that need to be installed
 ```
 
