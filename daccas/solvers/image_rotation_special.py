@@ -28,7 +28,7 @@ from scipy.ndimage import sobel
 from .base import BaseSolver, ImageInput, load_pil
 
 SEAM_R = 40
-DEFAULT_DELTA = 5
+DEFAULT_DELTA = 1
 INNER_R = 40           # inner-disc radius on the raw 100x100 captcha
 OUTER_SCALE = 0.93     # shrink factor that closes the black gap
 
